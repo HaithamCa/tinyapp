@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/HaithamCa/tinyapp/issues"
   },
-  "homepage": "https://github.com/HaithamCa/tinyapp#readme"
+  "homepage": "https://github.com/HaithamCa/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }

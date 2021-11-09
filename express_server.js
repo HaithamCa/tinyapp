@@ -34,10 +34,27 @@ app.post("/urls", (req, res) => {
   res.send("Ok");         // Respond with 'Ok' (we will replace this)
 });
 
+app.get("/u/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
+  res.redirect(longURL);
+});
+
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL/* What goes here? */ };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
   res.render("urls_show", templateVars);
 });
+
+app.post("/urls/:shortURL/delete", (req, res) =>{
+
+  // extract the id
+  const shortURL = req.params.shortURL;
+  // delete this joke from db
+  delete urlDatabase[req.params.shortURL];
+
+  res.redirect('/jokes')
+  res.redirect("/urls");
+})
 
 
 

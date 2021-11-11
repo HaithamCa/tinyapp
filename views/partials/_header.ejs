@@ -10,16 +10,15 @@
           <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         </div>
       </div>
-      <% if (username) { %>
+
+      <% if (userId) { %>
 <form class="form-inline" method="POST" action="/logout">
-  <h1>login as: <%= username %></h1>
-          <button type="submit" class="btn btn-outline-light" style="margin-right: 1em">logout</button>
+  <h5>logged in As: <%= userId.email %></h5>
+          <button type="submit" class="btn btn-outline-light" style="margin-right: 1em; margin-left: 1em">logout</button>
         </form>
       <%} else {%>
-      <form class="form-inline" method="POST" action="/login">
-        <input class="form-control" type="text" name="username" style="margin: 1em">
-        <button type="submit" class="btn btn-outline-light" style="margin-right: 1em">login</button>
-      </form>
+        <a class="nav-item nav-link" href="/login" style="padding: 1em; color:azure;">Login</a>
+        <a class="nav-item nav-link" href="/register" style=" color:azure">Register</a>
      <%}%>
     </nav>
   </header>

@@ -12,15 +12,20 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs")
 
 
+const urlDatabase = {
+  b6UTxQ: {
+      longURL: "https://www.tsn.ca",
+      userID: "aJ48lW"
+  },
+  i3BoGr: {
+      longURL: "https://www.google.ca",
+      userID: "aJ48lW"
+  }
+};
 
-// res.render("urls_index", templateVars);
-
-// app.get('/login', (req, res) => {
-// res.render('_header') 
-// });
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
+  "aJ48lW": {
+    id: "aJ48lW", 
     email: "user@example.com", 
     password: "purple-monkey-dinosaur"
   },
@@ -32,39 +37,37 @@ const users = {
 }
 
 app.get("/login", (req, res) => {
-  const templateVars = { urls: urlDatabase, userId: users[req.cookies['uid']] };
+  const templateVars = { urls: urlDatabase, user: users[req.cookies['uid']] };
 
   res.render("urls_login", templateVars)
 })
 
 app.post('/login', (req, res) => {
   console.log(req.body)
-  const templateVars = { urls: urlDatabase, userId: users[req.cookies['uid']] };
-  // const username = req.body.username;
-
   const { email, password } = req.body;
     
   if (email === "" || password === "") {
     res.status(400).send("Email or password missing")
     return;
   } else if (email && password) {
-    if (getUserByEmail(email, users)) {
-      const userId = generateRandomString();
-      users[userId] = {
-        userId,
-        email: email,
-        password: password
-      };
-      // req.cookies.userId = userId;
+
+    const user = getUserByEmail(email, users);
+    console.log(users)
+    if (user) {
+      const userId = user.id;
+      // users[userId] = {
+      //   userId,
+      //   email: email,
+      //   password: password
+      // };
       res.cookie("uid", userId)
       res.redirect('/urls');
     } else {
       const errorMessage = 'Invalid email or password';
-      res.status(400).send(errorMessage);
+      res.status(400)
+      res.redirect('/login')
     }
   }
-  // res.cookie('uid', templateVars);
-// res.redirect('/urls')
 });
 
 app.post('/logout', (req, res) => {
@@ -72,10 +75,6 @@ app.post('/logout', (req, res) => {
   res.redirect('/login')
 });
 
-const urlDatabase = {
-    "b2xVn2": "http://www.lighthouselabs.ca",
-    "9sm5xK": "http://www.google.com"
-  };
 
   app.get('/', (req, res) => {
       res.send("Hello!");
@@ -86,7 +85,7 @@ const urlDatabase = {
   })
 
   app.get("/register", (req, res) => {
-    const templateVars = { urls: urlDatabase, userId: users[req.cookies['uid']] };
+    const templateVars = { urls: urlDatabase, user: users[req.cookies['uid']] };
 res.render("urls_register", templateVars)
   })
 
@@ -98,67 +97,97 @@ res.render("urls_register", templateVars)
     if (email === "" || password === "") {
       res.status(400).send("Email or password missing")
       return;
-    } else if (req.body.email && req.body.password) {
-      if (!getUserByEmail(req.body.email, users)) {
+    } else if (email && password) {
+      if (!getUserByEmail(email, users)) {
         const userId = generateRandomString();
         users[userId] = {
           userId,
-          email: req.body.email,
-          password: req.body.password
+          email: email,
+          password: password
         };
-        req.cookies.userId = userId;
+        req.cookies.uid = userId;
+        res.cookie('uid', userId);
         res.redirect('/urls');
       } else {
         const errorMessage = 'Cannot create new account, because this email address is already registered.';
         res.status(400).send(errorMessage);
       }
     }
-
-
-    const uid = generateRandomString()
-     users[uid] = {uid, email: req.body.email, password: req.body.password};
-     res.cookie('uid', uid);
-    res.redirect("/urls");
+    // const uid = generateRandomString()
+    //  users[uid] = {uid, email: req.body.email, password: req.body.password};
+    //  res.cookie('uid', uid);
+    // res.redirect("/urls");
   })
 
   app.get("/urls", (req, res) => {
-    const templateVars = { urls: urlDatabase, userId: users[req.cookies['uid']] };
-  res.render("urls_index", templateVars);
-})
+    const templateVars = { 
+      urls: urlDatabase,
+       user: users[req.cookies['uid']],
+       status: 400,
+        message: "You shold be logged in to see this content"
+   };
+    if (templateVars.user) {
+      res.render("urls_index", templateVars);
+    } 
+    return res.render("urls_error", templateVars)
+  })
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = {userId: users[req.cookies['uid']]}
-  res.render("urls_new", templateVars);
+  const templateVars = {user: users[req.cookies['uid']], status: 400, message: "You shold be logged in to see this content"}
+  if (templateVars.user) {
+    return res.render("urls_new", templateVars);
+  } 
+  return res.render("urls_error", templateVars)
 });
 
 app.post("/urls", (req, res) => {
   console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  if (req.cookies.uid) {
+   const shortURL = generateRandomString();
+  urlDatabase[shortURL] = {longURL: req.body.longURL, userId: req.cookies.uid}
+    return res.redirect(`/urls`);
+  }
+  res.status(400).send("You can not make the action")
 });
 
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   console.log(shortURL)
   console.log(urlDatabase)
-  const longURL = urlDatabase[shortURL];
+  const longURL = urlDatabase[shortURL].longURL;
   console.log(longURL)
   res.redirect(longURL);
 });
 /////////////****** *
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.body.longURL], userId: users[req.cookies['uid']]};
-  res.render("urls_show", templateVars);
+  console.log(req.params.shortURL)
+  const templateVars = { 
+    shortURL: req.params.shortURL, 
+    longURL: urlDatabase[req.params.shortURL]?.longURL, 
+    status: 403,
+    message: 'You are not allowed to edit that TinyURL',
+    user: users[req.cookies.uid]
+  };
+  const shortURL = req.params.shortURL
+  console.log(req.cookies.uid === urlDatabase[shortURL]?.userID)
+  if (req.cookies.uid === urlDatabase[shortURL]?.userID && req.cookies.uid !== undefined) {
+
+    res.render("urls_show", templateVars)
+  } else {
+    res.render("urls_error", templateVars);
+  }
+
 });
 
 
 // UPDATE => update the info in the db
-app.post('/urls/:shortURL', (req, res) => {    ////////////////////////////////////////////
+app.post('/urls/:shortURL', (req, res) => {   
   // extract the id
   const shortURL = req.params.shortURL;
   // extract the question and anwer
   const longURL = req.body.longURL;
   // update the db
-  urlDatabase[req.params.shortURL] = longURL
+  urlDatabase[req.params.shortURL].longURL = longURL
   // redirect
   res.redirect('/urls');
 
@@ -167,9 +196,21 @@ app.post('/urls/:shortURL', (req, res) => {    /////////////////////////////////
 app.post("/urls/:shortURL/delete", (req, res) =>{
   // extract the id
   const shortURL = req.params.shortURL;
-  // delete this joke from db
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls");
+  if (req.cookies.uid === urlDatabase[shortURL].userID) {
+    // delete this from db
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls");
+  } else {
+    let templateVars = {
+      status: 401,
+      message: 'You are not allowed to delete that TinyURL',
+      user: users[req.cookies.uid]
+    }
+    res.status(401);
+    res.render("urls_error", templateVars);
+  }
+
+  // res.redirect("/urls");
 })
 
   app.get('/hello', (req, res) => {
@@ -211,4 +252,14 @@ app.post("/urls/:shortURL/delete", (req, res) =>{
       }
     }
     return undefined;
+  };
+
+  const urlsForUser = (id, database) => {
+    let filtered = {};
+    for (const shortURL in database) {
+      if (database[shortURL].userID === id) {
+        userUrls[shortURL] = database[shortURL];
+      }
+    }
+    return filtered;
   };

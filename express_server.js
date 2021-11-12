@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const PORT = 8080;
 
+const bcrypt = require('bcryptjs');
+
+
 const cookieParser = require('cookie-parser')
 app.use(cookieParser())
 
@@ -45,12 +48,13 @@ app.get("/login", (req, res) => {
 app.post('/login', (req, res) => {
   console.log(req.body)
   const { email, password } = req.body;
-    
-  if (email === "" || password === "") {
+  const hashedPassword = bcrypt.hashSync(password, 10);
+   let bpassword = bcrypt.compareSync(password, hashedPassword)
+  if (email === "" || bpassword === "") {
     res.status(400).send("Email or password missing")
     return;
-  } else if (email && password) {
-
+  } else if (email && bpassword) {
+    
     const user = getUserByEmail(email, users);
     console.log(users)
     if (user) {
@@ -93,7 +97,7 @@ res.render("urls_register", templateVars)
 
   app.post("/register", (req, res) => {     /////////////////////////////////
     const { email, password } = req.body;
-    
+    const hashedPassword = bcrypt.hashSync(password, 10);
     if (email === "" || password === "") {
       res.status(400).send("Email or password missing")
       return;
@@ -103,7 +107,7 @@ res.render("urls_register", templateVars)
         users[userId] = {
           userId,
           email: email,
-          password: password
+          password: hashedPassword
         };
         req.cookies.uid = userId;
         res.cookie('uid', userId);

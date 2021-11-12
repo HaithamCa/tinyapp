@@ -1,25 +1,24 @@
 const { getUserByEmail, generateRandomString } = require('./helpers');
-
-
 const express = require('express');
+var cookieSession = require('cookie-session');
+const bcrypt = require('bcryptjs');
+const cookieParser = require('cookie-parser');
+const bodyParser = require("body-parser");
+
+
 const app = express();
 const PORT = 8080;
 
-const bcrypt = require('bcryptjs');
-
-var cookieSession = require('cookie-session')
 app.use(cookieSession({
   name: 'session',
   keys: ['relly-hard-this-part', 'what-ever'],
 }))
-const cookieParser = require('cookie-parser')
-app.use(cookieParser())
-
-
-const bodyParser = require("body-parser");
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true})); 
 
 app.set("view engine", "ejs")
+
+
 
 
 const urlDatabase = {
@@ -78,63 +77,47 @@ app.post('/logout', (req, res) => {
   res.redirect('/login')
 });
 
+app.get("/register", (req, res) => {
+  const templateVars = { urls: urlDatabase, user: users[req.session['uid']] };
+  res.render("urls_register", templateVars)
+});
 
-  app.get('/', (req, res) => {
-      res.send("Hello!");
-  });
-
-  app.get("/urls.json", (req, res) => {
-      res.json(urlDatabase)
-  });
-
-  app.get("/register", (req, res) => {
-    const templateVars = { urls: urlDatabase, user: users[req.session['uid']] };
-res.render("urls_register", templateVars)
-  });
-
-  
-
-  app.post("/register", (req, res) => {     /////////////////////////////////
-    const { email, password } = req.body;
-    const hashedPassword = bcrypt.hashSync(password, 10);
-    if (email === "" || password === "") {
-      res.status(400).send("Email or password missing")
-      return;
-    } else if (email && password) {
-      if (!getUserByEmail(email, users)) {
-        const userId = generateRandomString();
-        users[userId] = {
-          userId,
-          email: email,
-          password: hashedPassword
-        };
-        req.session.uid = userId;
-        // res.cookie('uid', userId);
-        req.session.uid = userId
-        res.redirect('/urls');
-      } else {
-        const errorMessage = 'Cannot create new account, because this email address is already registered.';
-        res.status(400).send(errorMessage);
-      }
+app.post("/register", (req, res) => {     
+  const { email, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  if (email === "" || password === "") {
+    res.status(400).send("Email or password missing")
+    return;
+  } else if (email && password) {
+    if (!getUserByEmail(email, users)) {
+      const userId = generateRandomString();
+      users[userId] = {
+        userId,
+        email: email,
+        password: hashedPassword
+      };
+      req.session.uid = userId;
+      req.session.uid = userId
+      res.redirect('/urls');
+    } else {
+      const errorMessage = 'Cannot create new account, because this email address is already registered.';
+      res.status(400).send(errorMessage);
     }
-    // const uid = generateRandomString()
-    //  users[uid] = {uid, email: req.body.email, password: req.body.password};
-    //  res.cookie('uid', uid);
-    // res.redirect("/urls");
-  })
+  }
+})
 
-  app.get("/urls", (req, res) => {
-    const templateVars = { 
-      urls: urlDatabase,
-       user: users[req.session['uid']],
-       status: 400,
-        message: "You shold be logged in to see this content"
-   };
-    if (templateVars.user) {
-      res.render("urls_index", templateVars);
-    } 
-    return res.render("urls_error", templateVars);
-  })
+app.get("/urls", (req, res) => {
+  const templateVars = { 
+    urls: urlDatabase,
+      user: users[req.session['uid']],
+      status: 400,
+      message: "You shold be logged in to see this content"
+  };
+  if (templateVars.user) {
+    res.render("urls_index", templateVars);
+  } 
+  return res.render("urls_error", templateVars);
+})
 
 app.get("/urls/new", (req, res) => {
   const templateVars = {user: users[req.session['uid']], status: 400, message: "You shold be logged in to see this content"}
@@ -162,7 +145,7 @@ app.get("/u/:shortURL", (req, res) => {
   console.log(longURL);
   res.redirect(longURL);
 });
-/////////////****** *
+
 app.get("/urls/:shortURL", (req, res) => {
   console.log(req.params.shortURL)
   const templateVars = { 
@@ -180,9 +163,7 @@ app.get("/urls/:shortURL", (req, res) => {
   } else {
     res.render("urls_error", templateVars);
   }
-
 });
-
 
 // UPDATE => update the info in the db
 app.post('/urls/:shortURL', (req, res) => {   
@@ -212,14 +193,8 @@ app.post("/urls/:shortURL/delete", (req, res) =>{
     res.status(401);
     res.render("urls_error", templateVars);
   }
-
 });
 
-  app.listen(PORT, () => {
-    console.log(`Example app listening on port ${PORT}!`);
-  });
-
-
-
-
-  
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
+});

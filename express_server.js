@@ -1,4 +1,4 @@
-const { getUserByEmail, generateRandomString } = require('./helpers');
+const { getUserByEmail, generateRandomString, urlsForUser } = require('./helpers');
 const express = require('express');
 var cookieSession = require('cookie-session');
 const bcrypt = require('bcryptjs');
@@ -32,6 +32,7 @@ const urlDatabase = {
   }
 };
 
+// Those users will not work because of the hash password just for a new ones
 const users = { 
   "aJ48lW": {
     id: "aJ48lW", 
@@ -56,8 +57,9 @@ app.post('/login', (req, res) => {
   console.log(req.body)
   const { email, password } = req.body;
   const user = getUserByEmail(email, users);
-  const hashedPassword = bcrypt.hashSync(user.password, 10);
-   let passwordsMatch = bcrypt.compareSync(password, hashedPassword)
+  console.log("users", users)
+  console.log("user 61:", user)
+  let passwordsMatch = bcrypt.compareSync(password, user.password)
   if (email === "" || password === "") {
     const errorMessage = "Email or password missing";
    return res.render('urls_error', {message: errorMessage, status: 403, user: null})
@@ -66,15 +68,14 @@ app.post('/login', (req, res) => {
     console.log(users)
       req.session.uid = user.id;
       res.redirect('/urls');
-  } else {
+  }
     const errorMessage = 'Invalid email or password';
     res.render('urls_error', {message: errorMessage, status: 403, user: null})
-  }
 });
 
 app.post('/logout', (req, res) => {
-  req.session = null
-  res.redirect('/login')
+  req.session.uid = null;
+  res.redirect('/login');
 });
 
 app.get("/register", (req, res) => {
@@ -92,12 +93,11 @@ app.post("/register", (req, res) => {
     if (!getUserByEmail(email, users)) {
       const userId = generateRandomString();
       users[userId] = {
-        userId,
+        id: userId,
         email: email,
         password: hashedPassword
       };
       req.session.uid = userId;
-      req.session.uid = userId
       res.redirect('/urls');
     } else {
       const errorMessage = 'Cannot create new account, because this email address is already registered.';
@@ -107,35 +107,46 @@ app.post("/register", (req, res) => {
 })
 
 app.get("/urls", (req, res) => {
+  // get the urls of this users
+  const user =  users[req.session['uid']];
+  console.log("user 113:", user)
+  const userId = user.id;
+  console.log("userId", userId)
+  const userUrls = urlsForUser(userId, urlDatabase);
+  console.log("userUrls 114:", userUrls)
   const templateVars = { 
-    urls: urlDatabase,
-      user: users[req.session['uid']],
+    urls: userUrls,
+      user: user,
       status: 400,
       message: "You shold be logged in to see this content"
   };
   if (templateVars.user) {
-    res.render("urls_index", templateVars);
+    return res.render("urls_index", templateVars);
   } 
   return res.render("urls_error", templateVars);
 })
 
+app.post("/urls", (req, res) => {
+  console.log(req.body);  
+  if (req.session.uid) {
+   const shortURL = generateRandomString();
+  urlDatabase[shortURL] = {longURL: req.body.longURL, userID: req.session.uid}
+  console.log("urlDatabase 131:", urlDatabase)
+    return res.redirect("/urls");
+  }
+  res.status(400).send("You can not make the action")
+});
+
 app.get("/urls/new", (req, res) => {
-  const templateVars = {user: users[req.session['uid']], status: 400, message: "You shold be logged in to see this content"}
+  const user =  users[req.session['uid']];
+  console.log("user 139:",user)
+  const templateVars = {user: user, status: 400, message: "You shold be logged in to see this content"}
   if (templateVars.user) {
     return res.render("urls_new", templateVars);
   } 
   return res.render("urls_error", templateVars);
 });
 
-app.post("/urls", (req, res) => {
-  console.log(req.body);  
-  if (req.session.uid) {
-   const shortURL = generateRandomString();
-  urlDatabase[shortURL] = {longURL: req.body.longURL, userId: req.session.uid}
-    return res.redirect(`/urls`);
-  }
-  res.status(400).send("You can not make the action")
-});
 
 app.get("/u/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
@@ -157,6 +168,8 @@ app.get("/urls/:shortURL", (req, res) => {
   };
   const shortURL = req.params.shortURL
   console.log(req.session.uid === urlDatabase[shortURL]?.userID)
+  console.log("urlDatabase[shortURL]?.userID", urlDatabase[shortURL]?.userID)
+  console.log("req.session.uid", req.session.uid)
   if (req.session.uid === urlDatabase[shortURL]?.userID && req.session.uid !== undefined) {
 
     res.render("urls_show", templateVars);

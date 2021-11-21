@@ -18,13 +18,13 @@ const getUserByEmail = (email, database) => {
 };
 
 const urlsForUser = (id, database) => {
-  let filtered = {};
+  let userUrls = {};
   for (const shortURL in database) {
     if (database[shortURL].userID === id) {
       userUrls[shortURL] = database[shortURL];
     }
   }
-  return filtered;
+  return userUrls;
 };
 
 

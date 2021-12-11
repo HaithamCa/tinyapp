@@ -1,45 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
 
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
-  <title>TinyApp</title>
-</head>
-<body>
-
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+      integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
+      crossorigin="anonymous"
+    />
+    <title>TinyApp</title>
+  </head>
+  <body>
     <%- include('partials/_header') %>
 
-  <main style="margin: 1em;">
-    <h3>My URLs</h3>
-    <table class="table">
-      <thead>
-        <tr>
-          <th scope="col">Short URL</th>
-          <th scope="col">Long URL</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% for(let url in urls) { %>
+    <main style="margin: 1em">
+      <% if (user) { %>
+      <h3>My URLs</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Short URL</th>
+            <th scope="col">Long URL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for(let url in urls) { %>
           <tr>
             <td><%= url %></td>
             <td><%= urls[url].longURL %></td>
             <td>
               <!-- <form method="GET" action="/urls/<%= url %>"> -->
-                <button type="submit" class="btn btn-outline-primary" onclick="location.href='/urls/<%= url %>'">Edit</button>
+              <button
+                type="submit"
+                class="btn btn-outline-primary"
+                onclick="location.href='/urls/<%= url %>'"
+              >
+                Edit
+              </button>
               <!-- </form> -->
-          </td>
+            </td>
             <td>
               <form method="POST" action="/urls/<%= url %>/delete">
-                <button type="submit" class="btn btn-outline-danger">Delete</button>
+                <button type="submit" class="btn btn-outline-danger">
+                  Delete
+                </button>
               </form>
             </td>
           </tr>
-        <% } %>
-      </tbody>
-    </table>
-  </main>
-</body>
+          <% } %>
+        </tbody>
+      </table>
+      <% } else { %>
+        <h3 style="text-align: center">Welcome to TinyApp!</h3>
+        <p style="text-align: center">To benefit from the awesome features of TinyApp, you need to first log in or register</h3>
+        <div class="form-inline justify-content-center">
+          <form class="form-inline" action="/login" method="GET">
+            <button type="submit" class="btn btn-info" style="margin-right: 2em; margin-top: 3em;">Login</button>
+          </form>
+          <form class="form-inline" action="/register" method="GET">
+            <button type="submit" class="btn btn-info" style="margin-top: 3em;">Register</button>
+          </form>
+        </div>
+      <% } %>
+    </main>
+  </body>
 </html>
